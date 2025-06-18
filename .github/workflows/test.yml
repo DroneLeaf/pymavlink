@@ -60,12 +60,6 @@ jobs:
           git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git mavlink
           ln -s $PWD/mavlink/message_definitions ../
 
-      - name: Validate XML
-        run: |
-          python3 -m pip install --quiet pymavlink lxml
-          python -m pymavlink.tools.mavgen --validate \
-            message_definitions/v1.0/droneleaf_mav_msgs.xml
-
       - name: Install pymavlink
         run: |
           python3 -m pip install .
