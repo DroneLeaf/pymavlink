@@ -8,10 +8,9 @@ env:
 
 on:
   push:
-  pull_request:
+    tags:
+      - "v*"
   workflow_dispatch:
-  release:
-    types: [published]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -35,7 +34,7 @@ jobs:
           ref = os.environ.get("GITHUB_REF", "")
           event = os.environ.get("GITHUB_EVENT_NAME", "")
 
-          if ref in ("refs/heads/main", "refs/heads/master") or event in ("release", "workflow_dispatch"):
+          if ref in ("refs/heads/main", "refs/heads/master") or event in ("tags", "workflow_dispatch"):
               machines = [
                   ("linux", "ubuntu-latest", "auto"),
                   ("linux-arm", "ubuntu-24.04-arm", "auto"),
@@ -144,8 +143,18 @@ jobs:
     - name: Verify dist contents
       run: ls -lh dist/
 
-    # Upload everything in dist/ as release assets
-    - name: Attach wheels/sdist to the GitHub Release
+    # Creates the release if it doesn't exist, or re-uses it if someone made it manually.
+    - name: Create or update GitHub Release
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: ${{ github.ref_name }}
+        name:     ${{ github.ref_name }}
+        body:     "Auto-generated wheels and sdist."
+        draft:    false
+        prerelease: false
+
+    - name: Upload wheels & sdist to the Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
         files: dist/**/*
