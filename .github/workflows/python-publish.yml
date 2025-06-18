@@ -7,9 +7,11 @@ env:
   MAVLINK_TAG: master
 
 on:
+  # Any code push (branches or tags) so CI still runs for every commit
   push:
-    tags:
-      - "v*"
+    branches: ['**']
+    tags:     ['v*']         # e.g. v0.3.1
+  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -28,22 +30,19 @@ jobs:
         id: set-matrix
         shell: python
         run: |
-          import json
-          import os
+          import json, os
+          ref   = os.environ.get("GITHUB_REF", "")
+          is_tag = ref.startswith("refs/tags/")
 
-          ref = os.environ.get("GITHUB_REF", "")
-          event = os.environ.get("GITHUB_EVENT_NAME", "")
-
-          if ref in ("refs/heads/main", "refs/heads/master") or event in ("tags", "workflow_dispatch"):
+          if is_tag:  # 🟢 full matrix on tag pushes
               machines = [
-                  ("linux", "ubuntu-latest", "auto"),
-                  ("linux-arm", "ubuntu-24.04-arm", "auto"),
-                  ("macos", "macos-latest", "arm64 x86_64 universal2"),
-                  ("windows", "windows-latest", "auto"),
-                  # ("windows-arm", "windows-11-arm", "auto"), # Can't do this one yet, as lxml doesn't have Windows ARM wheels, and the runner doesn't have libxml2 pre-installed
+                  ("linux",      "ubuntu-latest",     "auto"),
+                  ("linux-arm",  "ubuntu-24.04-arm",  "auto"),
+                  ("macos",      "macos-latest",      "arm64 x86_64 universal2"),
+                  ("windows",    "windows-latest",    "auto"),
               ]
               py_versions = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
-          else:
+          else:        # 🔵 cheap matrix for branch pushes / PRs / manual runs
               machines = [
                   ("linux", "ubuntu-latest", "native"),
                   ("windows", "windows-latest", "native"),
@@ -126,35 +125,33 @@ jobs:
         name: sdist
         path: dist/*.tar.gz
         if-no-files-found: error
-
+        
   publish:
     needs: [build-wheels, build-sdist]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    # the default token must be allowed to write release assets
     permissions:
-      contents: write        # create / update release
+      contents: write
+
     steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: dist
-        merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
-    - name: Verify dist contents
-      run: ls -lh dist/
+      - run: ls -lh dist/
 
-    # Creates the release if it doesn't exist, or re-uses it if someone made it manually.
-    - name: Create or update GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ github.ref_name }}
-        name:     ${{ github.ref_name }}
-        body:     "Auto-generated wheels and sdist."
-        draft:    false
-        prerelease: false
+      - name: Create / update GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name:     ${{ github.ref_name }}
+          body:     "Auto-generated wheels and source distribution."
+          draft:    false
+          prerelease: false
 
-    - name: Upload wheels & sdist to the Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ github.ref_name }}
-        files: dist/**/*
+      - name: Upload wheels & sdist
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/**/*
