@@ -1,5 +1,8 @@
 name: test pymavlink
 
+env:
+  MAVLINK_TAG: master
+
 on: [push, pull_request]
 
 concurrency:
@@ -54,8 +57,14 @@ jobs:
       # install
       - name: Install mavlink message
         run: |
-          git clone https://github.com/ArduPilot/mavlink.git
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git
           ln -s $PWD/mavlink/message_definitions ../
+
+      - name: Validate XML
+        run: |
+          python3 -m pip install --quiet pymavlink lxml
+          python -m pymavlink.tools.mavgen --validate \
+            message_definitions/v1.0/droneleaf_mav_msgs.xml
 
       - name: Install pymavlink
         run: |
@@ -105,7 +114,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install mavlink message
         run: |
-          git clone https://github.com/ArduPilot/mavlink.git
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git
           ln -s $PWD/mavlink/message_definitions ../
       - run: cd "generator/javascript" && npm install
       - name : Test mavlink

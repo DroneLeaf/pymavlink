@@ -3,6 +3,9 @@
 
 name: Build and Optionally Publish
 
+env:
+  MAVLINK_TAG: master
+
 on:
   push:
   pull_request:
@@ -76,7 +79,7 @@ jobs:
     - name: Install mavlink definitions
       shell: bash
       run: |
-        git clone https://github.com/ArduPilot/mavlink.git
+        git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git
         ln -s $PWD/mavlink/message_definitions
     - name: Set CIBW_BUILD
       shell: bash
@@ -108,7 +111,7 @@ jobs:
         python-version: "3.9"
     - name: Install mavlink messages
       run: |
-        git clone https://github.com/ArduPilot/mavlink.git
+        git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git
         ln -s $PWD/mavlink/message_definitions
     - name: Install dependencies
       run: |
@@ -145,9 +148,11 @@ jobs:
         path: dist/*
         if-no-files-found: error
 
-    - name: Publish package
+    - name: Publish wheel to GitHub Packages
       if: github.event_name == 'release' && github.event.action == 'published'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        repository_url: https://pypi.pkg.github.com/${{ github.repository_owner }}
+        skip_existing: true
