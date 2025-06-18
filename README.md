@@ -45,7 +45,7 @@ Optional for FFT scripts and tests:
 sudo apt-get install python3-numpy python3-pytest
 ```
 
-Using pip you can install the required dependencies for pymavlink :
+Using pip you can install the required dependencies for leaf-pymavlink :
 
 ```bash
 sudo python3 -m pip install --upgrade future lxml
@@ -61,10 +61,10 @@ Lxml can be installed with a Windows installer from here : https://pypi.org/proj
 
 ### For users
 
-It is recommended to install pymavlink from PyPI with pip, that way dependencies should be auto installed by pip.
+It is recommended to install leaf-pymavlink from PyPI with pip, that way dependencies should be auto installed by pip.
 
 ```bash
-sudo python3 -m pip install --upgrade pymavlink
+sudo python3 -m pip install --upgrade leaf-pymavlink
 ```
 
 #### Mavnative
@@ -89,7 +89,7 @@ sudo python3 setup.py install
 
 ### Ardupilot Custom Modes
 
-By default, `pymavlink` will map the Ardupilot mode names to mode numbers per the definitions in the [ardupilotmega.xml](https://mavlink.io/en/messages/ardupilotmega.html#PLANE_MODE) file. However, during development, it can be useful to add to or update the default mode mappings.
+By default, `leaf-pymavlink` will map the Ardupilot mode names to mode numbers per the definitions in the [ardupilotmega.xml](https://mavlink.io/en/messages/ardupilotmega.html#PLANE_MODE) file. However, during development, it can be useful to add to or update the default mode mappings.
 
 To do this:
   - create a folder named `.pymavlink` in your home directory (i.e. `$HOME` on Linux, `$USERPROFILE` on Windows); and
