@@ -131,12 +131,12 @@ if build_fast_index:
         )
     ], language_level=3)
 
-setup (name = 'pymavlink',
+setup (name = 'leaf-pymavlink',
        version = __version__,
        description = 'Python MAVLink code',
        long_description = long_description,
        long_description_content_type = "text/markdown",
-       url = 'https://github.com/ArduPilot/pymavlink/',
+       url = 'https://github.com/DroneLeaf/pymavlink/',
        classifiers=['Development Status :: 5 - Production/Stable',
                     'Environment :: Console',
                     'Intended Audience :: Science/Research',
