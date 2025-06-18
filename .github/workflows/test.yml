@@ -1,5 +1,8 @@
 name: test pymavlink
 
+env:
+  MAVLINK_TAG: bugfix/mavlink-performance-opt
+
 on: [push, pull_request]
 
 concurrency:
@@ -54,7 +57,7 @@ jobs:
       # install
       - name: Install mavlink message
         run: |
-          git clone https://github.com/ArduPilot/mavlink.git
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/mavlink.git
           ln -s $PWD/mavlink/message_definitions ../
 
       - name: Install pymavlink
@@ -105,7 +108,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install mavlink message
         run: |
-          git clone https://github.com/ArduPilot/mavlink.git
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/mavlink.git
           ln -s $PWD/mavlink/message_definitions ../
       - run: cd "generator/javascript" && npm install
       - name : Test mavlink
