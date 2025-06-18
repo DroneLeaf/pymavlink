@@ -57,7 +57,7 @@ jobs:
       # install
       - name: Install mavlink message
         run: |
-          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git mavlink
           ln -s $PWD/mavlink/message_definitions ../
 
       - name: Validate XML
@@ -114,7 +114,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install mavlink message
         run: |
-          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git mavlink
           ln -s $PWD/mavlink/message_definitions ../
       - run: cd "generator/javascript" && npm install
       - name : Test mavlink

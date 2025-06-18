@@ -79,7 +79,7 @@ jobs:
     - name: Install mavlink definitions
       shell: bash
       run: |
-        git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git
+        git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git mavlink
         ln -s $PWD/mavlink/message_definitions
     - name: Set CIBW_BUILD
       shell: bash
@@ -111,7 +111,7 @@ jobs:
         python-version: "3.9"
     - name: Install mavlink messages
       run: |
-        git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git
+        git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git mavlink
         ln -s $PWD/mavlink/message_definitions
     - name: Install dependencies
       run: |
