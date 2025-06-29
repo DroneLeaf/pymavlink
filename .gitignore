@@ -29,3 +29,6 @@ dfindexer/dfindexer_cy.c
 dfindexer/*.so
 dfindexer/*.pyd
 *.egg-info
+.env
+.venv
+.pdm-python
