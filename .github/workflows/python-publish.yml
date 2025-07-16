@@ -4,7 +4,7 @@
 name: Build and Optionally Publish
 
 env:
-  MAVLINK_TAG: master
+  MAVLINK_TAG: dev-sitl
 
 on:
   # Any code push (branches or tags) so CI still runs for every commit
