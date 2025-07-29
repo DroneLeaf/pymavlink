@@ -183,68 +183,134 @@ local enumEntryName = {
 """)
 
 
-def generate_field_or_param(outf, field_or_param, name, label, physical_type, field_type, enums):
-    assert isinstance(field_or_param, mavparse.MAVEnumParam) or isinstance(field_or_param, mavparse.MAVField)
-    values = "nil"
-    enum_obj = None
-    if field_or_param.enum:
-        enum_obj = next((enum for enum in enums if enum.name == field_or_param.enum), None)
+def generate_field_or_param(outf, field_or_param, name, label,
+                            physical_type, field_type, enums):
+    """
+    Emit a Lua ProtoField declaration for one MAVLink field or enum parameter.
 
+    The only functional change vs. upstream is that hexadecimal bases
+    (base.HEX_DEC, base.HEX, …) are **never** used for signed integer
+    ProtoFields, because Wireshark’s Lua API rejects them.
+    """
+    assert isinstance(field_or_param, (mavparse.MAVEnumParam, mavparse.MAVField))
+
+    # ----------------------------------------------------------------
+    # Helpers ---------------------------------------------------------
+    # ----------------------------------------------------------------
+    def is_signed(ftype: str) -> bool:
+        """Return True for ftypes.INT8 / INT16 / INT32 / INT64."""
+        return ftype.startswith("ftypes.INT")
+
+    values     = "nil"          # value‑string table reference (4th arg)
+    enum_obj   = None
+    base_added = False          # track whether we already appended a base
+
+    # ----------------------------------------------------------------
+    # Enum handling ---------------------------------------------------
+    # ----------------------------------------------------------------
     if field_or_param.enum:
-        # display name of enum instead of base type
+        enum_obj = next((e for e in enums if e.name == field_or_param.enum),
+                        None)
+
+        # Show enum name instead of physical type
         display_type = field_or_param.enum
-        # show enum values for non-flags enums
-        if not enum_obj.bitmask:
-            values = "enumEntryName." + field_or_param.enum
-        else:
-            values = values + ", base.HEX_DEC"
-        # force display type of enums to uint32 so we can show the names
+
+        if enum_obj and not enum_obj.bitmask:       # ordinary enum
+            values = f"enumEntryName.{field_or_param.enum}"
+        else:                                       # bitmask enum
+            if is_signed(field_type):               # signed? → decimal
+                values = values + ", base.DEC"
+            else:                                   # unsigned → keep hex
+                values = values + ", base.HEX_DEC"
+            base_added = True
+
+        # Force type to UINT32 so Wireshark can map values → names
         if field_type in ("ftypes.FLOAT", "ftypes.DOUBLE", "ftypes.INT32"):
             field_type = "ftypes.UINT32"
+    # ----------------------------------------------------------------
+    # Plain field (non‑enum) -----------------------------------------
+    # ----------------------------------------------------------------
     else:
         display_type = physical_type
-        if isinstance(field_or_param, mavparse.MAVField) and field_or_param.display == "bitmask":
-            values = values + ", base.HEX_DEC"
-    unitstr = " " + field_or_param.units if field_or_param.units else ""
-    t.write(outf,
-"""
-f.${fname} = ProtoField.new("${flabel} (${ftypename})${unitname}", "mavlink_proto.${fname}", ${ftype}, ${fvalues})
-""", {'fname': name, 'flabel': label, 'ftypename': display_type, 'ftype': field_type, 'fvalues': values, 'unitname': unitstr})
+        if (isinstance(field_or_param, mavparse.MAVField)
+                and field_or_param.display == "bitmask"):
+            # Bitmask without enum: keep hex unless field is signed.
+            if not is_signed(field_type):
+                values = values + ", base.HEX_DEC"
+                base_added = True
+            else:
+                values = values + ", base.DEC"
+                base_added = True
 
-    # generate flag enum subfields
+    # If the field is a signed int AND we never forced a base above,
+    # leave `values` as "nil" (default base.DEC) – that’s API‑safe.
+    unitstr = " " + field_or_param.units if field_or_param.units else ""
+
+    t.write(outf,
+    """
+f.${fname} = ProtoField.new("${flabel} (${ftypename})${unitname}",
+                            "mavlink_proto.${fname}",
+                            ${ftype},
+                            ${fvalues})
+    """,
+    {'fname':   name,
+     'flabel':  label,
+     'ftypename': display_type,
+     'ftype':   field_type,
+     'fvalues': values,
+     'unitname': unitstr})
+
+    # ---------------------------------------------------------------
+    # Generate flag‑enum sub‑fields (checkbox style) ----------------
+    # ---------------------------------------------------------------
     if enum_obj and enum_obj.bitmask:
-        physical_bits = max(entry.value.bit_length() for entry in enum_obj.entry)
-        physical_bits = ceil(physical_bits/4)*4
+        physical_bits = max(e.value.bit_length() for e in enum_obj.entry)
+        physical_bits = ceil(physical_bits / 4) * 4  # round to nibble
         for entry in enum_obj.entry:
             if not is_power_of_2(entry.value) or entry.name.endswith("_ENUM_END"):
-                # omit flag enums have values like "0: None"
-                continue
-
+                continue  # skip composite / sentinel entries
             t.write(outf,
-"""
-f.${fname}_flag${ename} = ProtoField.bool("mavlink_proto.${fname}.${ename}", "${ename}", ${fbits}, nil, ${evalue})
-""", {'fname': name, 'ename': entry.name, 'fbits': physical_bits, 'evalue': entry.value})
+    """
+f.${fname}_flag${ename} = ProtoField.bool(
+        "mavlink_proto.${fname}.${ename}",
+        "${ename}", ${fbits}, nil, ${evalue})
+    """,
+    {'fname':  name,
+     'ename':  entry.name,
+     'fbits':  physical_bits,
+     'evalue': entry.value})
 
 
 def generate_msg_fields(outf, msg, enums):
+    """
+    Walks through every field in *msg* and delegates to
+    generate_field_or_param().  No functional change here – the
+    heavy‑lifting is inside the helper above.
+    """
     assert isinstance(msg, mavparse.MAVType)
+
     for f in msg.fields:
         assert isinstance(f, mavparse.MAVField)
+
         mavlink_type, field_type, _, _, count = get_field_info(f)
 
-        for i in range(0,count):
-            if count>1: 
-                array_text = '[' + str(i) + ']'
-                index_text = '_' + str(i)
-            else:
-                array_text = ''
-                index_text = ''
+        for i in range(count):
+            array_suffix = f'[{i}]' if count > 1 else ''
+            index_suffix = f'_{i}'  if count > 1 else ''
 
-            name = t.substitute("${fmsg}_${fname}${findex}", {'fmsg':msg.name, 'fname':f.name, 'findex':index_text})
-            label = t.substitute("${fname}${farray}", {'fname':f.name, 'farray':array_text})
-            generate_field_or_param(outf, f, name, label, mavlink_type, field_type, enums)
+            name  = t.substitute("${fmsg}_${fname}${findex}",
+                                 {'fmsg': msg.name,
+                                  'fname': f.name,
+                                  'findex': index_suffix})
+            label = t.substitute("${fname}${farray}",
+                                 {'fname': f.name,
+                                  'farray': array_suffix})
+
+            generate_field_or_param(outf, f, name, label,
+                                    mavlink_type, field_type, enums)
 
     t.write(outf, '\n\n')
+
 
 
 def generate_cmd_params(outf, cmd, enums):
