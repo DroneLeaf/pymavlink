@@ -57,8 +57,9 @@ jobs:
       # install
       - name: Install mavlink message
         run: |
-          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git mavlink
-          ln -s $PWD/mavlink/message_definitions ../
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
+          rm -rf message_definitions
+          cp -a .mavtmp/message_definitions .
 
       - name: Install pymavlink
         run: |
