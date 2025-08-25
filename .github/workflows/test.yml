@@ -57,9 +57,9 @@ jobs:
       # install
       - name: Install mavlink message
         run: |
-          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
-          rm -rf message_definitions
-          cp -a .mavtmp/message_definitions .
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git mavlink
+          ln -s $PWD/mavlink/message_definitions ../
+          ls -a ../message_definitions
 
       - name: Install pymavlink
         run: |
@@ -109,8 +109,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install mavlink message
         run: |
-          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git mavlink
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git $PWD/mavlink
           ln -s $PWD/mavlink/message_definitions ../
+          ls -a ../message_definitions
+
       - run: cd "generator/javascript" && npm install
       - name : Test mavlink
         run: |
