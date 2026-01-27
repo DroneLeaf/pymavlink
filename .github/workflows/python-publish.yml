@@ -129,7 +129,8 @@ jobs:
           pip install future lxml wheel setuptools Cython
         CIBW_ENVIRONMENT_LINUX: "MDEF=/tmp/message_definitions"
         CIBW_ENVIRONMENT_MACOS: "MDEF=/tmp/message_definitions"
-        CIBW_ENVIRONMENT_WINDOWS: "MDEF=C:\\tmp\\message_definitions"
+        # Use forward slashes for Windows - Python handles them correctly
+        CIBW_ENVIRONMENT_WINDOWS: "MDEF=C:/tmp/message_definitions"
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
