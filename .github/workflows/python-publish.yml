@@ -110,7 +110,7 @@ jobs:
           echo "Message definitions copied to /tmp/message_definitions"
           ls -la /tmp/message_definitions/v1.0/ | head -5
           grep -c "LEAF_" /tmp/message_definitions/v1.0/droneleaf_mav_msgs.xml || echo "WARNING: No LEAF messages found"
-          pip install future lxml wheel setuptools Cython
+          # Install system dependencies FIRST (needed for lxml)
           if command -v yum >/dev/null 2>&1; then
             yum install -y libxml2-devel libxslt-devel
           elif command -v apk >/dev/null 2>&1; then
@@ -120,6 +120,8 @@ jobs:
             DEBIAN_FRONTEND=noninteractive \
             apt-get install -y libxml2-dev libxslt1-dev
           fi
+          # Then install Python packages
+          pip install future lxml wheel setuptools Cython
         CIBW_BEFORE_BUILD_MACOS: |
           cp -r {project}/message_definitions /tmp/message_definitions
           echo "Message definitions copied to /tmp/message_definitions"
