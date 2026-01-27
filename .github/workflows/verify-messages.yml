@@ -1,0 +1,122 @@
+# Verify Required PyMAVLink Messages
+#
+# This workflow verifies that all required MAVLink messages and constants
+# used by the petal-app-manager workspace are available in the built pymavlink wheel.
+#
+# The required messages are defined in required_pymavlink_messages.json
+# Adding new messages: Simply edit the JSON file to include new messages/constants
+
+name: Verify PyMAVLink Messages
+
+env:
+  MAVLINK_TAG: dev-sitl
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-messages:
+    name: Verify Messages (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install mavlink message definitions
+        run: |
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
+          rm -rf message_definitions
+          cp -a .mavtmp/message_definitions .
+          ls -la message_definitions/
+
+      - name: Install pymavlink from source
+        run: |
+          python -m pip install --upgrade pip wheel
+          python -m pip install .
+
+      - name: Show installed pymavlink version
+        run: |
+          python -c "import pymavlink; print(f'pymavlink version: {pymavlink.__version__}')"
+
+      - name: Verify required messages exist
+        run: |
+          python .github/workflows/verify_pymavlink_messages.py --verbose
+
+  # Additional job to test against built wheels (only on releases)
+  verify-wheel:
+    name: Verify Built Wheel (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-22.04
+    needs: verify-messages
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install mavlink message definitions
+        run: |
+          git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
+          rm -rf message_definitions
+          cp -a .mavtmp/message_definitions .
+
+      - name: Build wheel
+        run: |
+          python -m pip install --upgrade pip wheel build
+          python -m build --wheel
+
+      - name: Install built wheel
+        run: |
+          python -m pip install dist/*.whl
+
+      - name: Verify required messages in wheel
+        run: |
+          python .github/workflows/verify_pymavlink_messages.py --verbose
+
+  # Summary job
+  verification-summary:
+    name: Verification Summary
+    runs-on: ubuntu-latest
+    needs: [verify-messages]
+    if: always()
+    steps:
+      - name: Check verification results
+        run: |
+          if [ "${{ needs.verify-messages.result }}" == "failure" ]; then
+            echo "❌ Message verification failed!"
+            echo ""
+            echo "Some required pymavlink messages/constants are missing."
+            echo "Please check:"
+            echo "  1. The message_definitions are up to date"
+            echo "  2. The required_pymavlink_messages.json is correct"
+            echo "  3. The custom DroneLeaf messages are properly defined"
+            exit 1
+          else
+            echo "✅ All message verifications passed!"
+          fi

@@ -1,0 +1,230 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Required pymavlink messages and constants used throughout the petal-app-manager workspace. This file is used by the CI workflow to verify that all required symbols exist after installing pymavlink. NOTE: Only messages actually used in source code are listed here - not all messages from the dialect files.",
+  "version": "1.0.0",
+  "last_updated": "2026-01-27",
+  
+  "imports": {
+    "pymavlink.mavutil": {
+      "description": "Main MAVLink utility module",
+      "required_attributes": [
+        "mavlink_connection",
+        "mavlink"
+      ]
+    },
+    "pymavlink.mavftp": {
+      "description": "MAVLink FTP operations"
+    },
+    "pymavlink.mavftp_op": {
+      "description": "MAVLink FTP operation types",
+      "required_attributes": ["FTP_OP"]
+    },
+    "pymavlink.quaternion": {
+      "description": "Quaternion utilities (requires numpy)",
+      "optional": true,
+      "required_attributes": ["QuaternionBase"]
+    }
+  },
+  
+  "dialects": {
+    "pymavlink.dialects.v20.all": {
+      "description": "MAVLink v2.0 dialect with all message definitions",
+      "messages": [
+        "MAVLINK_MSG_ID_HEARTBEAT",
+        "MAVLINK_MSG_ID_LOCAL_POSITION_NED",
+        "MAVLINK_MSG_ID_ATTITUDE",
+        "MAVLINK_MSG_ID_ATTITUDE_QUATERNION",
+        "MAVLINK_MSG_ID_RC_CHANNELS",
+        "MAVLINK_MSG_ID_STATUSTEXT",
+        "MAVLINK_MSG_ID_COMMAND_ACK",
+        "MAVLINK_MSG_ID_LOG_DATA",
+        "MAVLINK_MSG_ID_LOG_ENTRY",
+        "MAVLINK_MSG_ID_SERIAL_CONTROL",
+        "MAVLINK_MSG_ID_SYSTEM_TIME",
+        "MAVLINK_MSG_ID_HOME_POSITION",
+        "MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN"
+      ],
+      "custom_messages": [
+        "MAVLINK_MSG_ID_LEAF_HEARTBEAT",
+        "MAVLINK_MSG_ID_LEAF_EXTERNAL_TRAJECTORY_SETPOINT_ENU"
+      ]
+    },
+    "pymavlink.dialects.v20.common": {
+      "description": "MAVLink v2.0 common dialect"
+    },
+    "pymavlink.dialects.v10.all": {
+      "description": "MAVLink v1.0 dialect with all message definitions"
+    },
+    "pymavlink.dialects.v10.common": {
+      "description": "MAVLink v1.0 common dialect"
+    },
+    "pymavlink.dialects.v20.droneleaf_mav_msgs": {
+      "description": "DroneLeaf custom MAVLink messages (v2.0) - ONLY messages used in source code",
+      
+      "message_ids": {
+        "items": [
+          "MAVLINK_MSG_ID_LEAF_STATUS",
+          "MAVLINK_MSG_ID_LEAF_MISSION_STATUS",
+          "MAVLINK_MSG_ID_LEAF_MODE",
+          "MAVLINK_MSG_ID_LEAF_HEARTBEAT",
+          "MAVLINK_MSG_ID_LEAF_SETPOINT_OFFSET",
+          "MAVLINK_MSG_ID_LEAF_ACK_MISSION_RUN",
+          "MAVLINK_MSG_ID_LEAF_DO_QGC_MISSION_CONTROL_CMD",
+          "MAVLINK_MSG_ID_LEAF_ACK_MISSION_ABORT",
+          "MAVLINK_MSG_ID_LEAF_ACK_MISSION_RESUME"
+        ]
+      },
+      
+      "message_classes": {
+        "items": [
+          "MAVLink_leaf_do_arm_idle_message",
+          "MAVLink_leaf_do_takeoff_message",
+          "MAVLink_leaf_do_land_message",
+          "MAVLink_leaf_mission_heartbeat_message",
+          "MAVLink_leaf_set_mission_state_message"
+        ]
+      },
+      
+      "enums": {
+        "LEAF_STATUS": [
+          "LEAF_STATUS_DISARMED",
+          "LEAF_STATUS_READY_TO_FLY",
+          "LEAF_STATUS_NOT_READY",
+          "LEAF_STATUS_ARMED",
+          "LEAF_STATUS_ARMED_IDLE",
+          "LEAF_STATUS_TAKING_OFF",
+          "LEAF_STATUS_FLYING",
+          "LEAF_STATUS_READY_TO_LEARN",
+          "LEAF_STATUS_LEARNING",
+          "LEAF_STATUS_LANDING",
+          "LEAF_STATUS_LANDED",
+          "LEAF_STATUS_RETURNING_TO_BASE",
+          "LEAF_STATUS_MISSION_PAUSED"
+        ],
+        "LEAF_MISSION_STATE": [
+          "LEAF_MISSION_STATE_IDLE",
+          "LEAF_MISSION_STATE_READY",
+          "LEAF_MISSION_STATE_RUNNING",
+          "LEAF_MISSION_STATE_SCHEDULED_PAUSE",
+          "LEAF_MISSION_STATE_PAUSED_MID_STEP",
+          "LEAF_MISSION_STATE_PAUSED_BETWEEN_STEPS",
+          "LEAF_MISSION_STATE_COMPLETED",
+          "LEAF_MISSION_STATE_FAILED",
+          "LEAF_MISSION_STATE_CANCELLED",
+          "LEAF_MISSION_STATE_SAFETY"
+        ],
+        "LEAF_MODE": [],
+        "LEAF_MISSION_CONTROL_COMMAND": [
+          "LEAF_MISSION_CONTROL_PAUSE",
+          "LEAF_MISSION_CONTROL_RESUME",
+          "LEAF_MISSION_CONTROL_ABORT",
+          "LEAF_MISSION_CONTROL_START",
+          "LEAF_MISSION_CONTROL_READY",
+          "LEAF_MISSION_CONTROL_LAND_IN_PLACE",
+          "LEAF_MISSION_CONTROL_RETURN_TO_LAUNCH"
+        ]
+      },
+      
+      "constants": {
+        "items": [
+          "ENABLED_ALWAYS",
+          "NOT_STARTED"
+        ]
+      },
+      
+      "required_attributes": [
+        "mavlink_map",
+        "enums"
+      ]
+    }
+  },
+  
+  "mavutil_mavlink_constants": {
+    "description": "Constants accessed via mavutil.mavlink.*",
+    "param_types": [
+      "MAV_PARAM_TYPE_UINT8",
+      "MAV_PARAM_TYPE_INT8",
+      "MAV_PARAM_TYPE_UINT16",
+      "MAV_PARAM_TYPE_INT16",
+      "MAV_PARAM_TYPE_UINT32",
+      "MAV_PARAM_TYPE_INT32",
+      "MAV_PARAM_TYPE_UINT64",
+      "MAV_PARAM_TYPE_INT64",
+      "MAV_PARAM_TYPE_REAL32",
+      "MAV_PARAM_TYPE_REAL64"
+    ],
+    "mav_types": [
+      "MAV_TYPE_GCS"
+    ],
+    "mav_autopilot": [
+      "MAV_AUTOPILOT_INVALID"
+    ],
+    "mav_state": [
+      "MAV_STATE_ACTIVE",
+      "MAV_STATE_STANDBY"
+    ],
+    "mav_result": [
+      "MAV_RESULT_ACCEPTED",
+      "MAV_RESULT_DENIED",
+      "MAV_RESULT_TEMPORARILY_REJECTED",
+      "MAV_RESULT_UNSUPPORTED",
+      "MAV_RESULT_FAILED",
+      "MAV_RESULT_IN_PROGRESS"
+    ],
+    "mav_cmd": [
+      "MAV_CMD_REQUEST_MESSAGE",
+      "MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN",
+      "MAV_CMD_ACTUATOR_TEST",
+      "MAV_CMD_COMPONENT_ARM_DISARM",
+      "MAV_CMD_NAV_TAKEOFF",
+      "MAV_CMD_NAV_RETURN_TO_LAUNCH",
+      "MAV_CMD_NAV_LAND",
+      "MAV_CMD_MISSION_START",
+      "MAV_CMD_DO_SET_MODE",
+      "MAV_CMD_DO_SET_HOME",
+      "MAV_CMD_DO_CHANGE_SPEED",
+      "MAV_CMD_DO_REPOSITION"
+    ],
+    "mav_mission": [
+      "MAV_MISSION_ACCEPTED",
+      "MAV_MISSION_TYPE_MISSION",
+      "MAV_MISSION_TYPE_FENCE",
+      "MAV_MISSION_TYPE_RALLY"
+    ],
+    "mav_landed_state": [
+      "MAV_LANDED_STATE_ON_GROUND"
+    ],
+    "mav_severity": [
+      "MAV_SEVERITY_INFO",
+      "MAV_SEVERITY_WARNING",
+      "MAV_SEVERITY_ERROR"
+    ],
+    "serial_control_flags": [
+      "SERIAL_CONTROL_FLAG_RESPOND",
+      "SERIAL_CONTROL_FLAG_EXCLUSIVE"
+    ],
+    "actuator_output_function": [
+      "ACTUATOR_OUTPUT_FUNCTION_MOTOR1"
+    ],
+    "message_ids": [
+      "MAVLINK_MSG_ID_HEARTBEAT",
+      "MAVLINK_MSG_ID_ATTITUDE",
+      "MAVLINK_MSG_ID_COMMAND_ACK",
+      "MAVLINK_MSG_ID_LOG_DATA",
+      "MAVLINK_MSG_ID_LOG_ENTRY",
+      "MAVLINK_MSG_ID_SERIAL_CONTROL",
+      "MAVLINK_MSG_ID_SYSTEM_TIME",
+      "MAVLINK_MSG_ID_HOME_POSITION",
+      "MAVLINK_MSG_ID_LOCAL_POSITION_NED",
+      "MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN"
+    ],
+    "message_classes": [
+      "MAVLink_message",
+      "MAVLink_command_long_message",
+      "MAVLink_log_request_list_message",
+      "MAVLink_log_request_data_message",
+      "MAVLink_log_data_message",
+      "MAVLink_serial_control_message"
+    ]
+  }
+}
