@@ -57,8 +57,9 @@ jobs:
               ]
               py_versions = [
                 "3.8",
+                "3.11",
                 "3.13"
-              ] # Chosing the two most likely to break in PRs
+              ] # Testing oldest, commonly used, and newest Python versions
 
           matrix = {"include": []}
           for (name, runner, cibw_archs) in machines:
@@ -100,8 +101,16 @@ jobs:
         PYMAVLINK_FAST_INDEX: "1"
         CIBW_BUILD: ${{ matrix.cibw_build }}
         CIBW_ARCHS: ${{ matrix.cibw_archs }}
+        # Disable pip's build isolation so MDEF environment variable is passed to setup.py
+        CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
+        # Copy message_definitions to a fixed location and set MDEF
         CIBW_BEFORE_BUILD_LINUX: |
           set -e
+          cp -r {project}/message_definitions /tmp/message_definitions
+          echo "Message definitions copied to /tmp/message_definitions"
+          ls -la /tmp/message_definitions/v1.0/ | head -5
+          grep -c "LEAF_" /tmp/message_definitions/v1.0/droneleaf_mav_msgs.xml || echo "WARNING: No LEAF messages found"
+          pip install future lxml wheel setuptools Cython
           if command -v yum >/dev/null 2>&1; then
             yum install -y libxml2-devel libxslt-devel
           elif command -v apk >/dev/null 2>&1; then
@@ -111,13 +120,23 @@ jobs:
             DEBIAN_FRONTEND=noninteractive \
             apt-get install -y libxml2-dev libxslt1-dev
           fi
+        CIBW_BEFORE_BUILD_MACOS: |
+          cp -r {project}/message_definitions /tmp/message_definitions
+          echo "Message definitions copied to /tmp/message_definitions"
+          pip install future lxml wheel setuptools Cython
+        CIBW_BEFORE_BUILD_WINDOWS: >-
+          xcopy /E /I /Y /Q "{project}\message_definitions" "C:\tmp\message_definitions\" &&
+          pip install future lxml wheel setuptools Cython
+        CIBW_ENVIRONMENT_LINUX: "MDEF=/tmp/message_definitions"
+        CIBW_ENVIRONMENT_MACOS: "MDEF=/tmp/message_definitions"
+        # Use forward slashes for Windows - Python handles them correctly
+        CIBW_ENVIRONMENT_WINDOWS: "MDEF=C:/tmp/message_definitions"
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.name }}
         path: wheelhouse/*.whl
         if-no-files-found: error
-
   build-sdist:
     runs-on: ubuntu-latest
     steps:
@@ -131,13 +150,20 @@ jobs:
         git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
         rm -rf message_definitions
         cp -a .mavtmp/message_definitions .
+        echo "Checking for LEAF messages in droneleaf_mav_msgs.xml:"
+        grep -c "LEAF_" message_definitions/v1.0/droneleaf_mav_msgs.xml
     - name: Install dependencies
       run: |
         python3 -m pip install -U pip
         python3 -m pip install -U wheel
         python3 -m pip install build
-        python3 -m pip install -U .
+        MDEF=$PWD/message_definitions python3 -m pip install -U .
+    - name: Verify LEAF messages were generated
+      run: |
+        python3 -c "from pymavlink.dialects.v20 import droneleaf_mav_msgs as m; print('LEAF_HEARTBEAT:', hasattr(m, 'MAVLINK_MSG_ID_LEAF_HEARTBEAT'))"
     - name: Build sdist
+      env:
+        MDEF: ${{ github.workspace }}/message_definitions
       run: pipx run build --sdist
     - name: Upload sdist
       uses: actions/upload-artifact@v4
@@ -146,8 +172,69 @@ jobs:
         path: dist/*.tar.gz
         if-no-files-found: error
 
-  publish:
+  # Verify that all required MAVLink messages exist in the built artifacts
+  # This blocks publishing if verification fails
+  verify-messages:
+    name: Verify Messages (${{ matrix.artifact }})
     needs: [build-wheels, build-sdist]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # Use python3.11-linux which exists in both cheap and full matrix builds
+          - artifact: python3.11-linux
+            python-version: '3.11'
+            install-type: wheel
+          - artifact: sdist
+            python-version: '3.11'
+            install-type: sdist
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download built artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/
+
+      - name: List downloaded artifacts
+        run: ls -la dist/
+
+      - name: Install from wheel
+        if: matrix.install-type == 'wheel'
+        run: |
+          python -m pip install --upgrade pip
+          # Find and install the manylinux wheel (most compatible)
+          WHEEL=$(ls dist/*manylinux*.whl 2>/dev/null | head -1 || ls dist/*.whl | head -1)
+          echo "Installing wheel: $WHEEL"
+          python -m pip install "$WHEEL"
+
+      - name: Install from sdist
+        if: matrix.install-type == 'sdist'
+        run: |
+          python -m pip install --upgrade pip
+          SDIST=$(ls dist/*.tar.gz | head -1)
+          echo "Installing sdist: $SDIST"
+          python -m pip install "$SDIST"
+
+      - name: Show installed pymavlink version
+        run: |
+          python -c "import pymavlink; print(f'pymavlink version: {pymavlink.__version__}')"
+
+      - name: Verify required messages exist
+        run: |
+          python .github/workflows/verify_pymavlink_messages.py --verbose
+
+  publish:
+    needs: [build-wheels, build-sdist, verify-messages]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:

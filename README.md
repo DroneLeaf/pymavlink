@@ -79,6 +79,9 @@ From the pymavlink directory, you can use :
 sudo MDEF=PATH_TO_message_definitions python3 -m pip install . -v
 ```
 
+> [!NOTE]
+> PATH_TO_message_definitions should point to the directory containing the message definition files. Typically, this is the `message_definitions` folder in the mavlink repository. e.g. `/home/droneleaf/petal-app-manager-dev/mavlink/message_definitions/v1.0`
+
 Since pip installation is executed from /tmp, it is necessary to point to the directory containing message definitions with MDEF. MDEF should not be set to any particular message version directory but the parent folder instead. If you have cloned from mavlink/mavlink then this is ```/mavlink/message_definitions``` . Using pip should auto install dependencies and allow you to keep them up-to-date. 
 
 Or:
