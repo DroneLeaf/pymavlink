@@ -124,8 +124,8 @@ jobs:
           cp -r {project}/message_definitions /tmp/message_definitions
           echo "Message definitions copied to /tmp/message_definitions"
           pip install future lxml wheel setuptools
-        CIBW_BEFORE_BUILD_WINDOWS: |
-          xcopy /E /I /Y /Q "{project}\message_definitions" "C:\tmp\message_definitions\"
+        CIBW_BEFORE_BUILD_WINDOWS: >-
+          xcopy /E /I /Y /Q "{project}\message_definitions" "C:\tmp\message_definitions\" &&
           pip install future lxml wheel setuptools
         CIBW_ENVIRONMENT_LINUX: "MDEF=/tmp/message_definitions"
         CIBW_ENVIRONMENT_MACOS: "MDEF=/tmp/message_definitions"
