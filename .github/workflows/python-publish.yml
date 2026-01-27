@@ -101,14 +101,16 @@ jobs:
         PYMAVLINK_FAST_INDEX: "1"
         CIBW_BUILD: ${{ matrix.cibw_build }}
         CIBW_ARCHS: ${{ matrix.cibw_archs }}
+        # Disable pip's build isolation so MDEF environment variable is passed to setup.py
+        CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
         # Copy message_definitions to a fixed location and set MDEF
-        # This is needed because pip build isolation doesn't include the folder
         CIBW_BEFORE_BUILD_LINUX: |
           set -e
           cp -r {project}/message_definitions /tmp/message_definitions
           echo "Message definitions copied to /tmp/message_definitions"
           ls -la /tmp/message_definitions/v1.0/ | head -5
           grep -c "LEAF_" /tmp/message_definitions/v1.0/droneleaf_mav_msgs.xml || echo "WARNING: No LEAF messages found"
+          pip install future lxml wheel setuptools
           if command -v yum >/dev/null 2>&1; then
             yum install -y libxml2-devel libxslt-devel
           elif command -v apk >/dev/null 2>&1; then
@@ -121,8 +123,10 @@ jobs:
         CIBW_BEFORE_BUILD_MACOS: |
           cp -r {project}/message_definitions /tmp/message_definitions
           echo "Message definitions copied to /tmp/message_definitions"
-        CIBW_BEFORE_BUILD_WINDOWS: >
+          pip install future lxml wheel setuptools
+        CIBW_BEFORE_BUILD_WINDOWS: |
           xcopy /E /I /Y /Q "{project}\message_definitions" "C:\tmp\message_definitions\"
+          pip install future lxml wheel setuptools
         CIBW_ENVIRONMENT_LINUX: "MDEF=/tmp/message_definitions"
         CIBW_ENVIRONMENT_MACOS: "MDEF=/tmp/message_definitions"
         CIBW_ENVIRONMENT_WINDOWS: "MDEF=C:\\tmp\\message_definitions"
@@ -132,7 +136,6 @@ jobs:
         name: ${{ matrix.name }}
         path: wheelhouse/*.whl
         if-no-files-found: error
-
   build-sdist:
     runs-on: ubuntu-latest
     steps:
