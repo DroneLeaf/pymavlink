@@ -57,8 +57,9 @@ jobs:
               ]
               py_versions = [
                 "3.8",
+                "3.11",
                 "3.13"
-              ] # Chosing the two most likely to break in PRs
+              ] # Testing oldest, commonly used, and newest Python versions
 
           matrix = {"include": []}
           for (name, runner, cibw_archs) in machines:
@@ -156,6 +157,7 @@ jobs:
       fail-fast: true
       matrix:
         include:
+          # Use python3.11-linux which exists in both cheap and full matrix builds
           - artifact: python3.11-linux
             python-version: '3.11'
             install-type: wheel
