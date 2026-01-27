@@ -101,8 +101,13 @@ jobs:
         PYMAVLINK_FAST_INDEX: "1"
         CIBW_BUILD: ${{ matrix.cibw_build }}
         CIBW_ARCHS: ${{ matrix.cibw_archs }}
+        # Pass MDEF to the build environment so pymavlink finds message_definitions
+        # {project} is replaced by cibuildwheel with the project path in the build container
+        CIBW_ENVIRONMENT: "MDEF={project}/message_definitions"
         CIBW_BEFORE_BUILD_LINUX: |
           set -e
+          echo "MDEF=$MDEF"
+          ls -la $MDEF/v1.0/ | head -5 || echo "WARNING: message_definitions not found at $MDEF"
           if command -v yum >/dev/null 2>&1; then
             yum install -y libxml2-devel libxslt-devel
           elif command -v apk >/dev/null 2>&1; then
@@ -132,13 +137,20 @@ jobs:
         git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
         rm -rf message_definitions
         cp -a .mavtmp/message_definitions .
+        echo "Checking for LEAF messages in droneleaf_mav_msgs.xml:"
+        grep -c "LEAF_" message_definitions/v1.0/droneleaf_mav_msgs.xml
     - name: Install dependencies
       run: |
         python3 -m pip install -U pip
         python3 -m pip install -U wheel
         python3 -m pip install build
-        python3 -m pip install -U .
+        MDEF=$PWD/message_definitions python3 -m pip install -U .
+    - name: Verify LEAF messages were generated
+      run: |
+        python3 -c "from pymavlink.dialects.v20 import droneleaf_mav_msgs as m; print('LEAF_HEARTBEAT:', hasattr(m, 'MAVLINK_MSG_ID_LEAF_HEARTBEAT'))"
     - name: Build sdist
+      env:
+        MDEF: ${{ github.workspace }}/message_definitions
       run: pipx run build --sdist
     - name: Upload sdist
       uses: actions/upload-artifact@v4
