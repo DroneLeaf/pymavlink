@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Required pymavlink messages and constants used throughout the petal-app-manager workspace. This file is used by the CI workflow to verify that all required symbols exist after installing pymavlink. NOTE: Only messages actually used in source code are listed here - not all messages from the dialect files.",
   "version": "1.0.0",
-  "last_updated": "2026-01-27",
+  "last_updated": "2026-02-11",
   
   "imports": {
     "pymavlink.mavutil": {
@@ -122,6 +122,18 @@
           "LEAF_MISSION_CONTROL_READY",
           "LEAF_MISSION_CONTROL_LAND_IN_PLACE",
           "LEAF_MISSION_CONTROL_RETURN_TO_LAUNCH"
+        ],
+        "LEAF_MISSION_STEP_TYPE": [
+          "IDLE",
+          "GOTO_GPS_WAYPOINT",
+          "GOTO_LOCAL_POSITION",
+          "GOTO_RELATIVE",
+          "YAW_ABSOLUTE",
+          "YAW_RELATIVE",
+          "TAKEOFF",
+          "WAIT",
+          "LAND",
+          "RETURN_TO_LAUNCH"
         ]
       },
       
