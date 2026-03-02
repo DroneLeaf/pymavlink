@@ -3,7 +3,6 @@
   "description": "Required pymavlink messages and constants used throughout the petal-app-manager workspace. This file is used by the CI workflow to verify that all required symbols exist after installing pymavlink. NOTE: Only messages actually used in source code are listed here - not all messages from the dialect files.",
   "version": "1.0.0",
   "last_updated": "2026-02-11",
-  
   "imports": {
     "pymavlink.mavutil": {
       "description": "Main MAVLink utility module",
@@ -17,15 +16,18 @@
     },
     "pymavlink.mavftp_op": {
       "description": "MAVLink FTP operation types",
-      "required_attributes": ["FTP_OP"]
+      "required_attributes": [
+        "FTP_OP"
+      ]
     },
     "pymavlink.quaternion": {
       "description": "Quaternion utilities (requires numpy)",
       "optional": true,
-      "required_attributes": ["QuaternionBase"]
+      "required_attributes": [
+        "QuaternionBase"
+      ]
     }
   },
-  
   "dialects": {
     "pymavlink.dialects.v20.all": {
       "description": "MAVLink v2.0 dialect with all message definitions",
@@ -60,12 +62,10 @@
     },
     "pymavlink.dialects.v20.droneleaf_mav_msgs": {
       "description": "DroneLeaf custom MAVLink messages (v2.0) - ONLY messages used in source code",
-      
       "message_ids": {
         "items": [
           "MAVLINK_MSG_ID_LEAF_SYS_STATUS",
-          "MAVLINK_MSG_ID_LEAF_MISSION_STATUS_v2",
-          "MAVLINK_MSG_ID_LEAF_MISSION_STATUS",
+          "MAVLINK_MSG_ID_LEAF_MISSION_MANAGER_STATUS",
           "MAVLINK_MSG_ID_LEAF_MODE",
           "MAVLINK_MSG_ID_LEAF_HEARTBEAT",
           "MAVLINK_MSG_ID_LEAF_SETPOINT_OFFSET",
@@ -75,7 +75,6 @@
           "MAVLINK_MSG_ID_LEAF_ACK_MISSION_RESUME"
         ]
       },
-      
       "message_classes": {
         "items": [
           "MAVLink_leaf_do_arm_idle_message",
@@ -85,19 +84,18 @@
           "MAVLink_leaf_set_mission_state_message"
         ]
       },
-      
       "enums": {
         "LEAF_MISSION_STATE": [
-          "LEAF_MISSION_STATE_IDLE",
-          "LEAF_MISSION_STATE_READY",
-          "LEAF_MISSION_STATE_RUNNING",
-          "LEAF_MISSION_STATE_SCHEDULED_PAUSE",
-          "LEAF_MISSION_STATE_PAUSED_MID_STEP",
-          "LEAF_MISSION_STATE_PAUSED_BETWEEN_STEPS",
-          "LEAF_MISSION_STATE_COMPLETED",
-          "LEAF_MISSION_STATE_FAILED",
-          "LEAF_MISSION_STATE_CANCELLED",
-          "LEAF_MISSION_STATE_SAFETY"
+          "LEAF_MISSION_MANAGER_STATE_IDLE",
+          "LEAF_MISSION_MANAGER_STATE_READY",
+          "LEAF_MISSION_MANAGER_STATE_RUNNING",
+          "LEAF_MISSION_MANAGER_STATE_SCHEDULED_PAUSE",
+          "LEAF_MISSION_MANAGER_STATE_PAUSED_MID_STEP",
+          "LEAF_MISSION_MANAGER_STATE_PAUSED_BETWEEN_STEPS",
+          "LEAF_MISSION_MANAGER_STATE_COMPLETED",
+          "LEAF_MISSION_MANAGER_STATE_FAILED",
+          "LEAF_MISSION_MANAGER_STATE_CANCELLED",
+          "LEAF_MISSION_MANAGER_STATE_SAFETY"
         ],
         "LEAF_MODE": [],
         "LEAF_MISSION_CONTROL_COMMAND": [
@@ -150,21 +148,18 @@
           "LEAF_AIRBORNE_STATUS_AIRBORNE"
         ]
       },
-      
       "constants": {
         "items": [
           "ENABLED_ALWAYS",
           "NOT_STARTED"
         ]
       },
-      
       "required_attributes": [
         "mavlink_map",
         "enums"
       ]
     }
   },
-  
   "mavutil_mavlink_constants": {
     "description": "Constants accessed via mavutil.mavlink.*",
     "param_types": [
