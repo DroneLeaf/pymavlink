@@ -69,10 +69,7 @@
           "MAVLINK_MSG_ID_LEAF_MODE",
           "MAVLINK_MSG_ID_LEAF_HEARTBEAT",
           "MAVLINK_MSG_ID_LEAF_SETPOINT_OFFSET",
-          "MAVLINK_MSG_ID_LEAF_ACK_MISSION_RUN",
-          "MAVLINK_MSG_ID_LEAF_DO_QGC_MISSION_CONTROL_CMD",
-          "MAVLINK_MSG_ID_LEAF_ACK_MISSION_ABORT",
-          "MAVLINK_MSG_ID_LEAF_ACK_MISSION_RESUME"
+          "MAVLINK_MSG_ID_LEAF_DO_QGC_MISSION_CONTROL_CMD"
         ]
       },
       "message_classes": {
@@ -80,8 +77,8 @@
           "MAVLink_leaf_do_arm_idle_message",
           "MAVLink_leaf_do_takeoff_message",
           "MAVLink_leaf_do_land_message",
-          "MAVLink_leaf_mission_heartbeat_message",
-          "MAVLink_leaf_set_mission_state_message"
+          "MAVLink_leaf_mission_manager_heartbeat_message",
+          "MAVLink_leaf_set_mission_manager_state_message"
         ]
       },
       "enums": {
