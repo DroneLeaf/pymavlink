@@ -85,7 +85,7 @@
         ]
       },
       "enums": {
-        "LEAF_MISSION_STATE": [
+        "LEAF_MISSION_MANAGER_STATE": [
           "LEAF_MISSION_MANAGER_STATE_IDLE",
           "LEAF_MISSION_MANAGER_STATE_READY",
           "LEAF_MISSION_MANAGER_STATE_RUNNING",
