@@ -63,7 +63,6 @@
       
       "message_ids": {
         "items": [
-          "MAVLINK_MSG_ID_LEAF_STATUS",
           "MAVLINK_MSG_ID_LEAF_SYS_STATUS",
           "MAVLINK_MSG_ID_LEAF_MISSION_STATUS_v2",
           "MAVLINK_MSG_ID_LEAF_MISSION_STATUS",
@@ -88,21 +87,6 @@
       },
       
       "enums": {
-        "LEAF_STATUS": [
-          "LEAF_STATUS_DISARMED",
-          "LEAF_STATUS_READY_TO_FLY",
-          "LEAF_STATUS_NOT_READY",
-          "LEAF_STATUS_ARMED",
-          "LEAF_STATUS_ARMED_IDLE",
-          "LEAF_STATUS_TAKING_OFF",
-          "LEAF_STATUS_FLYING",
-          "LEAF_STATUS_READY_TO_LEARN",
-          "LEAF_STATUS_LEARNING",
-          "LEAF_STATUS_LANDING",
-          "LEAF_STATUS_LANDED",
-          "LEAF_STATUS_RETURNING_TO_BASE",
-          "LEAF_STATUS_MISSION_PAUSED"
-        ],
         "LEAF_MISSION_STATE": [
           "LEAF_MISSION_STATE_IDLE",
           "LEAF_MISSION_STATE_READY",
