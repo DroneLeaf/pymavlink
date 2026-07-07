@@ -8,7 +8,6 @@ test for trimming under Python 3
 from __future__ import absolute_import
 import unittest
 import os
-import pkg_resources
 import sys
 from pymavlink import mavutil
 

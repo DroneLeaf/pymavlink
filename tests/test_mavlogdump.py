@@ -6,7 +6,6 @@ regression tests for mavlogdump.py
 """
 import unittest
 import os
-import pkg_resources
 import sys
 
 class MAVLogDumpTest(unittest.TestCase):
@@ -22,8 +21,8 @@ class MAVLogDumpTest(unittest.TestCase):
     def test_dump_same(self):
         """Test dump of file is what we expect"""
         test_filename = "test.BIN"
-        test_filepath = pkg_resources.resource_filename(__name__,
-                                                        test_filename)
+        test_filepath = os.path.join(os.path.dirname(__file__),
+                                     test_filename)
         dump_filename = "tmp.dump"
         os.system("mavlogdump.py %s >%s" % (test_filepath, dump_filename))
         with open(dump_filename) as f:
@@ -33,8 +32,8 @@ class MAVLogDumpTest(unittest.TestCase):
                      "test.BIN.dumped"]
         success = False
         for expected in possibles:
-            expected_filepath = pkg_resources.resource_filename(__name__,
-                                                                expected)
+            expected_filepath = os.path.join(os.path.dirname(__file__),
+                                             expected)
             with open(expected_filepath) as e:
                 expected = e.read()
 
