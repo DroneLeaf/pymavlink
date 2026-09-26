@@ -14,6 +14,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+  # The following trigger is to allow this workflow to be triggered by leaf-mavlink's CI (the stage(1) of our new automation)
+  # so this workflow is also triggered by leaf-mavlink's CI on every push to its dev-sitl branch, carrying the exact
+  # commit SHA to pin therefore releases don't drift to whatever is at the branch tip when this workflow happens to run.
+  repository_dispatch:
+    types: [leaf-mavlink-updated]
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -88,8 +94,21 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install mavlink definitions
       shell: bash
+      env:
+        PIN_SHA: ${{ github.event.client_payload.sha }}
       run: |
-        git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
+        # Full clone (no --depth 1): when dispatched by leaf-mavlink, because
+        # the dispatched commit may not be in the shallow clone.
+        git clone --branch "$MAVLINK_TAG" https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
+
+        if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          echo "Pinning leaf-mavlink to dispatched commit $PIN_SHA"
+          git -C .mavtmp checkout "$PIN_SHA"
+        elif [[ "$GITHUB_REF" == refs/tags/* ]] && [ -f .leaf-mavlink-pin ]; then
+          TAG_PIN_SHA="$(cat .leaf-mavlink-pin)"
+          echo "Pinning leaf-mavlink to tag-recorded commit $TAG_PIN_SHA"
+          git -C .mavtmp checkout "$TAG_PIN_SHA"
+        fi
         rm -rf message_definitions
         cp -a .mavtmp/message_definitions .
     - name: Set CIBW_BUILD
@@ -148,8 +167,21 @@ jobs:
       with:
         python-version: "3.9"
     - name: Install mavlink messages
+      env:
+        PIN_SHA: ${{ github.event.client_payload.sha }}
       run: |
-        git clone --branch "$MAVLINK_TAG" --depth 1 https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
+        # Full clone (no --depth 1): when dispatched by leaf-mavlink, because
+        # the dispatched commit may not be in the shallow clone.
+        git clone --branch "$MAVLINK_TAG" https://github.com/DroneLeaf/leaf-mavlink.git .mavtmp
+
+        if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          echo "Pinning leaf-mavlink to dispatched commit $PIN_SHA"
+          git -C .mavtmp checkout "$PIN_SHA"
+        elif [[ "$GITHUB_REF" == refs/tags/* ]] && [ -f .leaf-mavlink-pin ]; then
+          TAG_PIN_SHA="$(cat .leaf-mavlink-pin)"
+          echo "Pinning leaf-mavlink to tag-recorded commit $TAG_PIN_SHA"
+          git -C .mavtmp checkout "$TAG_PIN_SHA"
+        fi
         rm -rf message_definitions
         cp -a .mavtmp/message_definitions .
         echo "Checking for LEAF messages in droneleaf_mav_msgs.xml:"
@@ -235,6 +267,64 @@ jobs:
         run: |
           python .github/workflows/verify_pymavlink_messages.py --verbose
 
+  # Automate what used to be a manual:
+  # - hand-edit __version__ on __init__.py
+  # - hand commit and tag 
+  # - hand pymavlink release draft
+  # All of that now happens automatically by a repository_dispatch (leaf-mavlink telling
+  # us there's a new dev-sitl commit to release) and only after this same run
+  # has already built and verified wheels/sdist for that exact commit, so
+  # we have another benifit: pymavlink won't get bumped and released for a commit
+  # unless we have built and verified wheels/sdist for it and failed builds
+  # won't get bumped, committed, or tagged.
+  bump-and-tag:
+    name: Bump version and tag release
+    needs: [build-wheels, build-sdist, verify-messages]
+    if: github.event_name == 'repository_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev-sitl
+        uses: actions/checkout@v4
+        with:
+          ref: dev-sitl
+          token: ${{ secrets.PYMAVLINK_RELEASE_TOKEN }} # A PAT, NOT the default GITHUB_TOKEN.
+          fetch-depth: 0
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          set -euo pipefail
+          new_version="$(python3 scripts/bump_version.py)"
+          echo "version=$new_version" >> "$GITHUB_OUTPUT"
+          # now the patch version has been bumped
+          # and the new version is recorded in __init__.py
+          # so __init__.py git object is flagged as modified
+          # in the next step we will add and commit it then
+          # create a tag with the new version from that commit
+
+      - name: Commit bump and create tag
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.version }}
+          PIN_SHA: ${{ github.event.client_payload.sha }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Record the exact leaf-mavlink commit this release was built for,
+          # so the tag-triggered run below can pin to the same commit instead of
+          # re-resolving branch tip (which may have moved between this run and the tag push).
+          echo "$PIN_SHA" > .leaf-mavlink-pin
+          
+          git add __init__.py
+          git add .leaf-mavlink-pin
+          git commit -m "hashem-automtion: bump version to ${NEW_VERSION}"
+          git tag "v${NEW_VERSION}"
+
+          git push origin dev-sitl
+          git push origin "v${NEW_VERSION}"
+
   publish:
     needs: [build-wheels, build-sdist, verify-messages]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -305,3 +395,20 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}        # create in repo/org secrets
           skip-existing: true
+
+      # 5️⃣  Mirror to DroneLeaf's own Nexus (repo.droneleaf.io), as an
+      # ADDITIONAL target alongside public TestPyPI/PyPI (transition period,
+      # not a replacement). Public PyPI has a 10GB/project storage limit that
+      # has already been hit once and failed a release silently, whereas
+      # this Nexus instance is fully DroneLeaf-controlled infra.
+      - name: Publish to DroneLeaf Nexus (repo.droneleaf.io)
+        if: success() || failure()
+        continue-on-error: true
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          repository-url: https://repo.droneleaf.io/repository/pypi-hosted/
+          user: ${{ secrets.NEXUS_PYPI_USER }}
+          password: ${{ secrets.NEXUS_PYPI_TOKEN }}
+          skip-existing: true
+          continue-on-error: true # I have added this until I fully prepared and integrated the Nexus repo
