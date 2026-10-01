@@ -319,7 +319,7 @@ jobs:
           
           git add __init__.py
           git add .leaf-mavlink-pin
-          git commit -m "hashem-automtion: bump version to ${NEW_VERSION}"
+          git commit -m "Bump version to ${NEW_VERSION} (leaf-mavlink@${PIN_SHA:0:7})"
           git tag "v${NEW_VERSION}"
 
           git push origin dev-sitl
