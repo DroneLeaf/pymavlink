@@ -91,7 +91,7 @@ jobs:
     env:
       PYTHON_VERSION: ${{ matrix.python_version }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
     - name: Install mavlink definitions
       shell: bash
       env:
@@ -153,7 +153,7 @@ jobs:
         # Use forward slashes for Windows - Python handles them correctly
         CIBW_ENVIRONMENT_WINDOWS: "MDEF=C:/tmp/message_definitions"
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.name }}
         path: wheelhouse/*.whl
@@ -161,9 +161,9 @@ jobs:
   build-sdist:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v7
       with:
         python-version: "3.9"
     - name: Install mavlink messages
@@ -200,7 +200,7 @@ jobs:
         MDEF: ${{ github.workspace }}/message_definitions
       run: pipx run build --sdist
     - name: Upload sdist
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: sdist
         path: dist/*.tar.gz
@@ -226,15 +226,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Download built artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.artifact }}
           path: dist/
@@ -284,7 +284,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout dev-sitl
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: dev-sitl
           token: ${{ secrets.PYMAVLINK_RELEASE_TOKEN }} # A PAT, NOT the default GITHUB_TOKEN.
@@ -336,7 +336,7 @@ jobs:
     steps:
       # 1️⃣  Grab the artefacts we just built
       - name: Download dist artefacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -345,7 +345,7 @@ jobs:
 
       # 2️⃣  (Optional) Creates the release if it doesn't exist, or re-uses it if someone made it manually.
       - name: Create or update GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           name:     ${{ github.ref_name }}
@@ -354,7 +354,7 @@ jobs:
           prerelease: false
 
       - name: Upload wheels & sdist to the Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           files: dist/**/*
@@ -403,7 +403,7 @@ jobs:
       # this Nexus instance is fully DroneLeaf-controlled infra.
       - name: Publish to DroneLeaf Nexus (repo.droneleaf.io)
         if: success() || failure()
-        continue-on-error: true
+        continue-on-error: true # I have added this until I fully prepared and integrated the Nexus repo
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
@@ -411,4 +411,4 @@ jobs:
           user: ${{ secrets.NEXUS_PYPI_USER }}
           password: ${{ secrets.NEXUS_PYPI_TOKEN }}
           skip-existing: true
-          continue-on-error: true # I have added this until I fully prepared and integrated the Nexus repo
+          
