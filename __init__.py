@@ -1,2 +1,2 @@
 '''Python MAVLink library - see https://mavlink.io/en/'''
-__version__ = '0.1.28'
+__version__ = '0.1.29'
