@@ -271,7 +271,6 @@ jobs:
 
       # 3️⃣  Upload to **Test PyPI** (best-effort only; do not block the release publish)
       - name: Publish to TestPyPI
-        if: ${{ secrets.TEST_PYPI_API_TOKEN != '' }}
         continue-on-error: true
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
