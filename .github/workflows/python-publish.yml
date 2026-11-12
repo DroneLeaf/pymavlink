@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -140,7 +140,7 @@ jobs:
         path: wheelhouse/*.whl
         if-no-files-found: error
   build-sdist:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -179,7 +179,7 @@ jobs:
   verify-messages:
     name: Verify Messages (${{ matrix.artifact }})
     needs: [build-wheels, build-sdist]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: true
       matrix:
@@ -238,7 +238,7 @@ jobs:
   publish:
     needs: [build-wheels, build-sdist, verify-messages]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write           # (needed to create the release)
       id-token: write           # (optional) for OIDC login to PyPI instead of passwords
@@ -269,8 +269,10 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: dist/**/*
 
-      # 3️⃣  Upload to **Test PyPI**
+      # 3️⃣  Upload to **Test PyPI** (best-effort only; do not block the release publish)
       - name: Publish to TestPyPI
+        if: ${{ secrets.TEST_PYPI_API_TOKEN != '' }}
+        continue-on-error: true
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
